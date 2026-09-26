@@ -46,6 +46,7 @@ public class DishServiceImpl implements DishService {
         Dish dish = new Dish();
         BeanUtils.copyProperties(dishDTO, dish);
         dishMapper.insert(dish);
+        //添加菜品相关口味
         if (dishDTO.getFlavors() != null && !dishDTO.getFlavors().isEmpty()){
             List<DishFlavor> flavors = dishDTO.getFlavors();
             flavors.forEach(flavor -> flavor.setDishId(dish.getId()));
@@ -78,5 +79,37 @@ public class DishServiceImpl implements DishService {
         dishMapper.deleteByIds(ids);
         //删除菜品相关口味
         dishFlavorMapper.deleteByDishIds(ids);
+    }
+
+    @Override
+    @Transactional
+    public DishVO getByIdWithFlavors(Long id) {
+        DishVO dishVO = new DishVO();
+        //根据id获取菜品基本信息
+        Dish dish = dishMapper.getById(id);
+        //获取菜品口味
+        List<DishFlavor> flavors = dishFlavorMapper.getByDishId(id);
+        //封装菜品信息
+        BeanUtils.copyProperties(dish, dishVO);
+        dishVO.setFlavors(flavors);
+        return dishVO;
+    }
+    @Override
+    @Transactional
+    public void updateDish(DishDTO dishDTO) {
+        Dish dish = new Dish();
+        BeanUtils.copyProperties(dishDTO, dish);
+        //更新菜品基本信息
+        dishMapper.update(dish);
+        //删除菜品相关口味
+        List<Long> dishIds = new ArrayList<>();
+        dishIds.add(dishDTO.getId());
+        dishFlavorMapper.deleteByDishIds(dishIds);
+        //添加菜品相关口味
+        if (dishDTO.getFlavors() != null && !dishDTO.getFlavors().isEmpty()){
+            List<DishFlavor> flavors = dishDTO.getFlavors();
+            flavors.forEach(flavor -> flavor.setDishId(dish.getId()));
+            dishFlavorMapper.insertBatch(flavors);
+        }
     }
 }
