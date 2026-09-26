@@ -56,4 +56,10 @@
         </where>
         order by d.create_time desc
     </select>
+    <select id="getByIds" resultType="com.sky.entity.Dish">
+        select * from dish where id in
+            <foreach item="id" collection="ids" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+    </select>
 </mapper>
