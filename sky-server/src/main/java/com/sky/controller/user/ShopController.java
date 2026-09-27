@@ -20,7 +20,7 @@ public class ShopController {
     public static final String SHOP_STATUS = "shopStatus";
 
     @Autowired
-    @Qualifier("StringRedisTemplate")
+    @Qualifier("RedisTemplate")
     private RedisTemplate redisTemplate;
     /**
      * 查询店铺状态
