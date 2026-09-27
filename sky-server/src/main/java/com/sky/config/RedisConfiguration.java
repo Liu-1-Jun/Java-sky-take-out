@@ -15,7 +15,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfiguration {
     //字符串类型模板对象
     @Bean
-    @Qualifier("StringRedisTemplate")
+    @Qualifier("StringRedisTemplate")//标识这个模板对象的名称
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory factory) {
         log.info("开始创建stringredis模板对象...");
         StringRedisTemplate template = new StringRedisTemplate();
@@ -24,7 +24,7 @@ public class RedisConfiguration {
     }
     //json类型模板对象
     @Bean
-    @Qualifier("JsonRedisTemplate")
+    @Qualifier("JsonRedisTemplate")//标识这个模板对象的名称
     public RedisTemplate JsonRedisTemplate(RedisConnectionFactory factory) {
         log.info("开始创建jsonredis模板对象...");
         RedisTemplate template = new RedisTemplate();
@@ -38,6 +38,16 @@ public class RedisConfiguration {
         template.setHashKeySerializer(new StringRedisSerializer());
         //设置hash的value的序列化器,使用json序列化器
         template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        return template;
+    }
+    @Bean
+    @Qualifier("RedisTemplate")
+    public RedisTemplate redisTemplate(RedisConnectionFactory factory) {
+        log.info("开始创建redis模板对象...");
+        RedisTemplate template = new RedisTemplate();
+        template.setConnectionFactory(factory);
+        //设置key的序列化器
+        template.setKeySerializer(new StringRedisSerializer());
         return template;
     }
 
