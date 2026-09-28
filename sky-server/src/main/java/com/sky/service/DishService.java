@@ -17,4 +17,10 @@ public interface DishService {
     void updateDish(DishDTO dishDTO);
     void updateStatus(String status, Long id);
     List<Dish> list(Long categoryId);
+    /**
+     * 条件查询菜品和口味
+     * @param dish
+     * @return
+     */
+    List<DishVO> listWithFlavor(Dish dish);
 }

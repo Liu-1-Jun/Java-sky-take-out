@@ -6,6 +6,7 @@ import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Setmeal;
 import com.sky.enumeration.OperationType;
 import com.sky.result.PageResult;
+import com.sky.vo.DishItemVO;
 import com.sky.vo.SetmealVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
@@ -45,4 +46,9 @@ public interface SetmealMapper {
     void deleteByIds(List<Long> ids);
 
     List<Setmeal> getByIds(List<Long> ids);
+
+    @Select("select * from setmeal where category_id = #{categoryId} and status = #{status}")
+    List<Setmeal> list(Setmeal setmeal);
+
+    List<DishItemVO> getDishItemBySetmealId(Long id);
 }
