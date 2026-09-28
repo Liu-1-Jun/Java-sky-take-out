@@ -20,12 +20,15 @@ import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -39,6 +42,9 @@ public class DishServiceImpl implements DishService {
     private DishFlavorMapper dishFlavorMapper;
     @Autowired
     private DishSetmealMapper dishSetmealMapper;
+    @Autowired
+    @Qualifier("RedisTemplate")
+    private RedisTemplate redisTemplate;
 
     @Override
     @Transactional//声明式事务，因为这里涉及到两次数据库操作，所以需要声明式事务
@@ -52,6 +58,9 @@ public class DishServiceImpl implements DishService {
             flavors.forEach(flavor -> flavor.setDishId(dish.getId()));
             dishFlavorMapper.insertBatch(flavors);
         }
+        //新增菜品成功，更新缓存
+        //根据菜品的分类id更新缓存
+        redisTemplate.delete("dish_" + dishDTO.getCategoryId());
     }
 
     @Override
@@ -79,6 +88,10 @@ public class DishServiceImpl implements DishService {
         dishMapper.deleteByIds(ids);
         //删除菜品相关口味
         dishFlavorMapper.deleteByDishIds(ids);
+        //删除菜品成功，更新缓存
+        //根据菜品的分类id更新缓存，因为需要查询菜品的分类id，这边简化，全部删除
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
     }
 
     @Override
@@ -111,6 +124,10 @@ public class DishServiceImpl implements DishService {
             flavors.forEach(flavor -> flavor.setDishId(dish.getId()));
             dishFlavorMapper.insertBatch(flavors);
         }
+        //更新菜品成功，更新缓存
+        //因为可能会更新菜品的分类，所以全部删除
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
     }
     @Override
     @Transactional
@@ -122,6 +139,9 @@ public class DishServiceImpl implements DishService {
 
         //更新菜品状态
         dishMapper.update(dish);
+        //更新缓存
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
     }
     //根据分类id查询菜品列表
     @Override
