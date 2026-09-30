@@ -1,7 +1,10 @@
 package com.sky.service.impl;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
+import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersSubmitDTO;
 import com.sky.entity.AddressBook;
 import com.sky.entity.OrderDetail;
@@ -13,8 +16,10 @@ import com.sky.mapper.AddressBookMapper;
 import com.sky.mapper.OrderDetailMapper;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.ShoppingCartMapper;
+import com.sky.result.PageResult;
 import com.sky.service.OrderService;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,5 +97,62 @@ public class OrderServiceImpl implements OrderService {
                 .orderTime(orders.getOrderTime())
                 .build();
         return orderSubmitVO;
+    }
+
+    @Override
+    public PageResult pageQuery(OrdersPageQueryDTO ordersPageQueryDTO) {
+        log.info("订单分页查询，参数：{}", ordersPageQueryDTO);
+        List<OrderVO> list = new ArrayList<>();
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        Page<Orders> page = orderMapper.pageQuery(ordersPageQueryDTO);
+        //查询订单详情
+        if (page != null && page.getResult() != null && page.getResult().size() > 0){
+            for (Orders orders : page.getResult()){
+                Long orderId = orders.getId();
+                OrderVO orderVO = new OrderVO();
+                BeanUtils.copyProperties(orders, orderVO);
+                List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(orderId);
+                orderVO.setOrderDetailList(orderDetailList);
+                list.add(orderVO);
+            }
+        }
+        return new PageResult(page.getTotal(), list);
+    }
+    @Override
+    public OrderVO orderDetail(Long id) {
+        log.info("订单详情，id：{}", id);
+        OrderVO orderVO = new OrderVO();
+        Orders orders = orderMapper.getById(id);
+        BeanUtils.copyProperties(orders, orderVO);
+        List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(id);
+        orderVO.setOrderDetailList(orderDetailList);
+        return orderVO;
+    }
+    @Override
+    public void cancel(Long id) {
+        log.info("订单取消，id：{}", id);
+        Orders orders = new Orders();
+        orders.setId(id);
+        orders.setStatus(Orders.CANCELLED);
+        orders.setCancelTime(LocalDateTime.now());
+        orderMapper.update(orders);
+    }
+    @Override
+    public void repetition(Long id) {
+        log.info("再来一单，id：{}", id);
+        Orders orders = orderMapper.getById(id);
+        Orders newOrders = new Orders();
+        BeanUtils.copyProperties(orders, newOrders);
+        newOrders.setCancelReason(null);
+        newOrders.setCancelTime(null);
+        newOrders.setDeliveryTime(null);
+        newOrders.setEstimatedDeliveryTime(null);
+        newOrders.setOrderTime(LocalDateTime.now());
+        newOrders.setStatus(Orders.PENDING_PAYMENT);
+        newOrders.setRejectionReason(null);
+        newOrders.setCheckoutTime(null);
+        newOrders.setNumber(String.valueOf(System.currentTimeMillis()));
+        log.info("再来一单，新订单：{}", newOrders);
+        orderMapper.insert(newOrders);
     }
 }
